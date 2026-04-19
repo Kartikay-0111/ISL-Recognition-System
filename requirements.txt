@@ -1,0 +1,46 @@
+# Core dependencies for Indian Sign Language Recognition System
+# Works on Windows, macOS (Intel & Apple Silicon), and Linux
+
+# Deep Learning Framework
+# NOTE for macOS Apple Silicon (M1/M2/M3): use 'tensorflow-macos' instead
+tensorflow>=2.8.0
+keras>=2.8.0
+
+# Computer Vision
+opencv-python>=4.5.0
+mediapipe>=0.8.0
+pillow>=8.0.0
+
+# Data Processing
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+
+# GUI and Visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Speech Synthesis
+pyttsx3>=2.90
+
+# Jupyter Notebook Support (for training)
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# Additional Utilities
+tqdm>=4.62.0
+requests>=2.25.0
+
+# -------------------------------------------------------------------
+# Platform-specific notes (no action needed, pip handles these):
+#
+#   Windows : pyttsx3 uses SAPI5 natively. No extra system packages.
+#   macOS   : pyttsx3 uses NSSpeechSynthesizer. For Apple Silicon, install
+#             tensorflow-macos and tensorflow-metal for GPU acceleration.
+#   Linux   : pyttsx3 requires 'espeak' — install via:
+#               sudo apt install espeak        (Debian/Ubuntu)
+#               sudo dnf install espeak        (Fedora)
+#
+# GPU Support (NVIDIA only, optional):
+#   pip install tensorflow[and-cuda]
+# -------------------------------------------------------------------
