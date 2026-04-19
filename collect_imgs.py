@@ -4,7 +4,7 @@ import mediapipe as mp
 import os
 import time
 
-# 35 classes matching the training notebook and Script.py: digits 1-9, then A-Z
+# 35 classes matching the training notebook and script.py: digits 1-9, then A-Z
 CLASS_NAMES = [str(n) for n in range(1, 10)] + [chr(c) for c in range(ord('A'), ord('Z')+1)]
 
 DATA_DIR = './Indian'

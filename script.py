@@ -26,7 +26,7 @@ def get_ui_font():
         return 'DejaVu Sans'
 
 # -------------------- Model config --------------------
-MODEL_PATH = "Mobilenetv2_ISL_model.h5"
+MODEL_PATH = "Mobilenetv2_ISL_model.keras"
 INPUT_W = INPUT_H = 224  # your model input
 # Fill this with your actual label order:
 CLASS_NAMES = [

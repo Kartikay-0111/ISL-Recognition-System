@@ -2,7 +2,7 @@
 train_model.py — Standalone MobileNetV2 training script for ISL Recognition.
 
 Reads images from the 'Indian/' directory and trains a model that is saved
-as 'Mobilenetv2_ISL_model.h5', ready for use by Script.py.
+as 'Mobilenetv2_ISL_model.h5', ready for use by script.py.
 
 Usage:
     python train_model.py
@@ -250,7 +250,7 @@ def main():
     model.save(MODEL_SAVE_PATH)
     print(f"\n✅ Model saved as '{MODEL_SAVE_PATH}'")
     print(f"   File size: {os.path.getsize(MODEL_SAVE_PATH) / (1024*1024):.1f} MB")
-    print(f"\n🎉 Training complete! You can now run: python Script.py")
+    print(f"\n🎉 Training complete! You can now run: python script.py")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,12 @@
-# 🤟 Indian Sign Language Recognition System
+# Indian Sign Language Recognition System
 
 An **AI-powered real-time Indian Sign Language (ISL) recognition and translation system**.  
 Uses a webcam to detect hand signs, classify them with a MobileNetV2 deep learning model,
 and display + speak the translated text — all through a modern desktop GUI.
+
+---
+
+Dataset used : https://www.kaggle.com/datasets/vaishnaviasonawane/indian-sign-language-dataset
 
 ---
 
@@ -18,12 +22,6 @@ and display + speak the translated text — all through a modern desktop GUI.
   - [Step 2 — Train the Model](#step-2--train-the-model)
   - [Step 3 — Run the Real-Time Translator](#step-3--run-the-real-time-translator)
 - [Keyboard Shortcuts](#-keyboard-shortcuts)
-- [Technical Details](#-technical-details)
-- [Troubleshooting](#-troubleshooting)
-- [Future Enhancements](#-future-enhancements)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Acknowledgments](#-acknowledgments)
 
 ---
 
@@ -101,9 +99,10 @@ Indian-Sign-Language-Recognition-System/
 │
 ├── Indian_keypoints/                         # Unused keypoint data (can be ignored)
 │
-├── Indian_sign_language_Mobilenetv2.ipynb    # Core training pipeline (optimized MobileNetV2)
-├── Indian sign language resnet.ipynb         # Alternative architecture (ResNet50)
-├── indian-sign-language-classification.ipynb # Performance visualization & analysis
+├── ISL_Mobilenetv2.ipynb                     # Core training pipeline (optimized MobileNetV2)
+├── ISL_resnet.ipynb                          # Alternative architecture (ResNet50)
+├── ISL_classification.ipynb                  # Performance visualization & analysis
+├── Mobilenetv2_ISL_model.keras               # Optimized model file (≈ 10 MB)
 ├── LICENSE                                   # MIT License
 └── README.md                                 # Documentation
 ```
@@ -115,7 +114,7 @@ Indian-Sign-Language-Recognition-System/
 | **`script.py`** | The main application. Opens a Tkinter GUI with dual camera views (full frame + hand ROI), runs MediaPipe hand detection, feeds cropped hand images to the MobileNetV2 model for classification, appends predictions to a text buffer, and can speak the accumulated text via pyttsx3. Cross-platform font and TTS fallbacks included. |
 | **`collect_imgs.py`** | Interactive data collection tool. Iterates through all 35 classes, prompts the user to show each sign, captures 100 images per class via webcam, crops hand regions using MediaPipe, resizes to 224×224, and saves both images (`.jpg`) and keypoints (`.npy`). |
 | **`train_model.py`** | Standalone training script. Loads images from `Indian/`, applies data augmentation, builds a MobileNetV2 model with fine-tuned top layers, trains with early stopping & learning rate scheduling, evaluates per-class metrics, and saves the final model as `Mobilenetv2_ISL_model.h5`. |
-| **`Mobilenetv2_ISL_model.h5`** | Pre-trained Keras model file. Can be used directly with `Script.py` without retraining. |
+| **`Mobilenetv2_ISL_model.h5`** | Pre-trained Keras model file. Can be used directly with `script.py` without retraining. |
 | **`requirements.txt`** | Pinned minimum versions for all Python dependencies, with platform-specific notes for macOS Apple Silicon, Linux espeak, and optional GPU support. |
 
 ---
@@ -256,7 +255,7 @@ Training details:
 ### Step 3 — Run the Real-Time Translator
 
 ```bash
-python Script.py
+python script.py
 ```
 
 The GUI launches with:
@@ -277,73 +276,3 @@ The GUI launches with:
 | `Ctrl + C` | Clear the text area |
 | `Ctrl + P` | Pause / resume detection |
 | `Esc` | Stop speech |
-
----
-
-## 🔧 Technical Details
-
-| Parameter | Value |
-|---|---|
-| Hand detection engine | MediaPipe Hands (21 landmarks per hand, up to 2 hands) |
-| Model architecture | MobileNetV2 + GlobalAvgPool + Dense(128) + Softmax(35) |
-| Model input | 224 × 224 × 3 (RGB, normalized to [0, 1]) |
-| Classification threshold | 90% confidence (adjustable in `Script.py`) |
-| Duplicate suppression | Same character re-inserted only after 15+ frames |
-| TTS engine | pyttsx3 (falls back to `say` on macOS, `espeak` on Linux, PowerShell on Windows) |
-| GUI framework | Tkinter with ttk styled widgets |
-| Frame rate | ~66 FPS target (15 ms update loop) |
-
----
-
-## 🔍 Troubleshooting
-
-| Problem | Solution |
-|---|---|
-| **`ModuleNotFoundError: No module named 'tkinter'`** | **Linux:** `sudo apt install python3-tk` · **macOS:** `brew install python-tk@3.10` |
-| **Camera shows black screen** | Check webcam connection. On macOS, grant camera permissions. Try changing `cv2.VideoCapture(0)` to `cv2.VideoCapture(1)` in `Script.py`. |
-| **`pyttsx3` speech not working on Linux** | Install espeak: `sudo apt install espeak` |
-| **TensorFlow import error on Apple Silicon** | Install `tensorflow-macos` instead of `tensorflow`: `pip install tensorflow-macos` |
-| **Low prediction accuracy** | Collect more training data (500+ images per class) and retrain. Ensure good lighting. |
-| **`protobuf` version conflict** | Run `pip install protobuf>=3.20,<4` to resolve MediaPipe/TensorFlow conflicts. |
-| **Slow inference without GPU** | Expected on CPU. Close other heavy applications. Model inference (~25 MB) is lightweight. |
-
----
-
-## 🔮 Future Enhancements
-
-- [ ] Dynamic sign (word/phrase) recognition using LSTMs
-- [ ] Two-hand gesture support with spatial relationships
-- [ ] Mobile app (Android / iOS) via TensorFlow Lite
-- [ ] Cloud inference API for web integration
-- [ ] Sentence prediction and autocomplete
-- [ ] Support for regional ISL dialects
-
----
-
-## 🤝 Contributing
-
-1. **Fork** this repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -m "Add your feature"`
-4. Push to your fork: `git push origin feature/your-feature`
-5. Open a **Pull Request**
-
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **[MediaPipe](https://mediapipe.dev/)** — Real-time hand landmark detection
-- **[TensorFlow](https://www.tensorflow.org/)** — Deep learning framework
-- **[OpenCV](https://opencv.org/)** — Computer vision library
-- **[pyttsx3](https://github.com/nateshmbhat/pyttsx3)** — Offline text-to-speech
-- **Indian Sign Language community** — Inspiration and feedback
-
----
-
-✨ *Made with ❤️ for the Indian Sign Language community*
