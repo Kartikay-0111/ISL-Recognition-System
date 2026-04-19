@@ -2,9 +2,12 @@
 train_model.py — Standalone MobileNetV2 training script for ISL Recognition.
 
 Reads images from the 'Indian/' directory and trains a model that is saved
-as 'Mobilenetv2_ISL_model.h5', ready for use by script.py.
+as 'Mobilenetv2_ISL_model.keras', ready for use by script.py.
+
+Compatible with TensorFlow >=2.16 / Keras 3.
 
 Usage:
+    pip install -r requirements.txt
     python train_model.py
 """
 
@@ -19,22 +22,25 @@ import cv2
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import classification_report
+
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.utils import img_to_array
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import (Dense, Dropout, GlobalAveragePooling2D,
-                                     BatchNormalization)
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-from tensorflow.keras.regularizers import l2
+# Keras 3 imports (bundled with TF >=2.16)
+from keras.utils import img_to_array
+from keras.layers import (Dense, Dropout, GlobalAveragePooling2D,
+                           BatchNormalization, RandomRotation,
+                           RandomZoom, RandomTranslation, Rescaling)
+from keras.models import Sequential
+from keras.optimizers import Adam
+from keras.applications import MobileNetV2
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from keras.regularizers import l2
+
 import warnings
 warnings.filterwarnings('ignore')
 
 # ==================== Configuration ====================
 DATA_PATH = "Indian"
-MODEL_SAVE_PATH = "Mobilenetv2_ISL_model.h5"
+MODEL_SAVE_PATH = "Mobilenetv2_ISL_model.keras"   # modern .keras format
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 32
 EPOCHS = 50  # Early stopping will likely end training sooner
@@ -128,26 +134,22 @@ def main():
     print(f"   Validation samples: {len(X_val)} ({len(X_val)/len(images)*100:.0f}%)")
     print(f"   Test samples:       {len(X_test)} ({len(X_test)/len(images)*100:.0f}%)")
 
-    # --- Normalize ---
+    # --- Normalize (will also be done inside model via Rescaling layer) ---
     X_train = X_train / 255.0
     X_val = X_val / 255.0
     X_test = X_test / 255.0
 
-    # --- Data augmentation ---
-    print("\n🔄 Configuring data augmentation...")
-    datagen = ImageDataGenerator(
-        rotation_range=15,
-        zoom_range=0.1,
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        shear_range=0.1,
-        horizontal_flip=False,  # Don't flip — signs are orientation-sensitive
-        fill_mode="nearest"
-    )
-    datagen.fit(X_train)
-
-    # --- Build model ---
+    # --- Build model with inline augmentation (Keras 3 way) ---
     print("\n🏗️  Building MobileNetV2 model...")
+
+    # Data augmentation via Keras preprocessing layers
+    # These layers are active only during training (no-op at inference)
+    data_augmentation = Sequential([
+        RandomRotation(factor=0.04),          # ±15° expressed as fraction of 2π
+        RandomZoom(height_factor=0.1),
+        RandomTranslation(height_factor=0.1, width_factor=0.1),
+    ], name="data_augmentation")
+
     base_model = MobileNetV2(
         weights='imagenet',
         include_top=False,
@@ -164,6 +166,7 @@ def main():
     print(f"   Trainable layers:  {len(base_model.layers) - fine_tune_at}")
 
     model = Sequential([
+        data_augmentation,
         base_model,
         GlobalAveragePooling2D(),
         Dropout(0.3),
@@ -199,11 +202,12 @@ def main():
         )
     ]
 
-    # --- Train ---
+    # --- Train (directly with numpy arrays — no deprecated generator) ---
     print(f"\n🚀 Starting training (max {EPOCHS} epochs, early stopping enabled)...")
     print("-" * 60)
     history = model.fit(
-        datagen.flow(X_train, y_train, batch_size=BATCH_SIZE),
+        X_train, y_train,
+        batch_size=BATCH_SIZE,
         validation_data=(X_val, y_val),
         epochs=EPOCHS,
         callbacks=callbacks,
@@ -246,7 +250,7 @@ def main():
         zero_division=0
     ))
 
-    # --- Save model ---
+    # --- Save model in modern .keras format ---
     model.save(MODEL_SAVE_PATH)
     print(f"\n✅ Model saved as '{MODEL_SAVE_PATH}'")
     print(f"   File size: {os.path.getsize(MODEL_SAVE_PATH) / (1024*1024):.1f} MB")

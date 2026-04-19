@@ -16,7 +16,8 @@ Dataset used : https://www.kaggle.com/datasets/vaishnaviasonawane/indian-sign-la
 - [Architecture](#-architecture)
 - [Project Structure & File Descriptions](#-project-structure--file-descriptions)
 - [Prerequisites](#-prerequisites)
-- [Setup — Windows, macOS & Linux](#-setup--windows-macos--linux)
+- [Quick Start (All Platforms)](#-quick-start-all-platforms)
+- [Detailed Setup](#%EF%B8%8F-detailed-setup--windows-macos--linux)
 - [Usage](#-usage)
   - [Step 1 — Collect Training Data](#step-1--collect-training-data)
   - [Step 2 — Train the Model](#step-2--train-the-model)
@@ -38,33 +39,33 @@ with text-to-speech output**.
 
 ```
 ┌───────────────────────────────────────────────────────────┐
-│                    Real-Time Pipeline                      │
+│                    Real-Time Pipeline                     │
 │                                                           │
 │  ┌──────────┐    ┌──────────────┐    ┌────────────────┐   │
-│  │  Webcam   │───▶│  MediaPipe   │───▶│  Hand Region   │   │
-│  │  (OpenCV) │    │  Hands API   │    │  Extraction    │   │
+│  │  Webcam  │───▶│  MediaPipe   │───▶│  Hand Region   │   │
+│  │  (OpenCV)│    │  Hands API   │    │  Extraction    │   │
 │  └──────────┘    └──────────────┘    └───────┬────────┘   │
 │                                              │            │
 │                                              ▼            │
 │  ┌──────────┐    ┌──────────────┐    ┌────────────────┐   │
-│  │  Speech   │◀──│  Text Buffer  │◀──│  MobileNetV2   │   │
-│  │  (pyttsx3)│    │  (Tkinter)   │    │  Classifier    │   │
+│  │  Speech  │◀── │  Text Buffer │◀── │  MobileNetV2   │   │
+│  │ (pyttsx3)│    │  (Tkinter)   │    │  Classifier    │   │
 │  └──────────┘    └──────────────┘    └────────────────┘   │
 │                                                           │
 └───────────────────────────────────────────────────────────┘
 
 ┌───────────────────────────────────────────────────────────┐
-│                    Training Pipeline                       │
+│                    Training Pipeline                      │
 │                                                           │
 │  ┌──────────┐    ┌──────────────┐    ┌────────────────┐   │
-│  │  Webcam   │───▶│  MediaPipe   │───▶│  Cropped Hand  │   │
-│  │  Capture  │    │  Detection   │    │  Images (224²)  │   │
+│  │  Webcam  │───▶│  MediaPipe   │───▶│  Cropped Hand  │   │
+│  │  Capture │    │  Detection   │    │  Images (224²) │   │
 │  └──────────┘    └──────────────┘    └───────┬────────┘   │
 │                                              │            │
 │                                              ▼            │
 │  ┌──────────────────┐    ┌───────────────────────────┐    │
-│  │  .h5 Model File  │◀──│  MobileNetV2 Fine-Tuning  │    │
-│  │  (≈ 25 MB)       │    │  + Data Augmentation       │    │
+│  │ .keras Model File│◀── │ MobileNetV2 Fine-Tuning   │    │
+│  │  (≈ 10 MB)       │    │  + Data Augmentation      │    │
 │  └──────────────────┘    └───────────────────────────┘    │
 │                                                           │
 └───────────────────────────────────────────────────────────┘
@@ -90,19 +91,17 @@ Indian-Sign-Language-Recognition-System/
 ├── script.py                                 # Main application (real-time translator GUI)
 ├── collect_imgs.py                           # Webcam-based dataset collection tool
 ├── train_model.py                            # Standalone MobileNetV2 training script
-├── Mobilenetv2_ISL_model.h5                  # Pre-trained model weights (≈ 25 MB)
+├── Mobilenetv2_ISL_model.keras               # Pre-trained model file (≈ 10 MB)
+├── Mobilenetv2_ISL_model.h5                  # Legacy model file (≈ 25 MB, fallback)
 ├── requirements.txt                          # Python dependencies (cross-platform)
 │
 ├── Indian/                                   # Training image dataset
 │   ├── 1/ ... 9/                             #   Digit classes (1–9)
 │   └── A/ ... Z/                             #   Letter classes (A–Z)
 │
-├── Indian_keypoints/                         # Unused keypoint data (can be ignored)
-│
 ├── ISL_Mobilenetv2.ipynb                     # Core training pipeline (optimized MobileNetV2)
 ├── ISL_resnet.ipynb                          # Alternative architecture (ResNet50)
 ├── ISL_classification.ipynb                  # Performance visualization & analysis
-├── Mobilenetv2_ISL_model.keras               # Optimized model file (≈ 10 MB)
 ├── LICENSE                                   # MIT License
 └── README.md                                 # Documentation
 ```
@@ -111,11 +110,11 @@ Indian-Sign-Language-Recognition-System/
 
 | File | Purpose |
 |---|---|
-| **`script.py`** | The main application. Opens a Tkinter GUI with dual camera views (full frame + hand ROI), runs MediaPipe hand detection, feeds cropped hand images to the MobileNetV2 model for classification, appends predictions to a text buffer, and can speak the accumulated text via pyttsx3. Cross-platform font and TTS fallbacks included. |
+| **`script.py`** | The main application. Runs a pre-flight check for system dependencies, opens a Tkinter GUI with dual camera views (full frame + hand ROI), runs MediaPipe hand detection, feeds cropped hand images to the MobileNetV2 model for classification, appends predictions to a text buffer, and can speak the accumulated text via pyttsx3. Automatically loads `.keras` or `.h5` model, with cross-platform font and TTS fallbacks. |
 | **`collect_imgs.py`** | Interactive data collection tool. Iterates through all 35 classes, prompts the user to show each sign, captures 100 images per class via webcam, crops hand regions using MediaPipe, resizes to 224×224, and saves both images (`.jpg`) and keypoints (`.npy`). |
-| **`train_model.py`** | Standalone training script. Loads images from `Indian/`, applies data augmentation, builds a MobileNetV2 model with fine-tuned top layers, trains with early stopping & learning rate scheduling, evaluates per-class metrics, and saves the final model as `Mobilenetv2_ISL_model.h5`. |
-| **`Mobilenetv2_ISL_model.h5`** | Pre-trained Keras model file. Can be used directly with `script.py` without retraining. |
-| **`requirements.txt`** | Pinned minimum versions for all Python dependencies, with platform-specific notes for macOS Apple Silicon, Linux espeak, and optional GPU support. |
+| **`train_model.py`** | Standalone training script (Keras 3). Loads images from `Indian/`, uses Keras preprocessing layers for data augmentation (baked into the model), builds a MobileNetV2 with fine-tuned top layers, trains with early stopping & learning rate scheduling, evaluates per-class metrics, and saves the final model as `Mobilenetv2_ISL_model.keras`. |
+| **`Mobilenetv2_ISL_model.keras`** | Pre-trained Keras 3 model file (≈ 10 MB). Can be used directly with `script.py` without retraining. |
+| **`requirements.txt`** | Pinned minimum versions for all Python dependencies, with platform-specific notes for macOS, Linux, and optional GPU support. |
 
 ---
 
@@ -123,7 +122,7 @@ Indian-Sign-Language-Recognition-System/
 
 | Requirement | Details |
 |---|---|
-| **Python** | 3.8 – 3.11 (3.10 recommended) |
+| **Python** | 3.10 – 3.12 (3.12 recommended) |
 | **Webcam** | Built-in or USB; must be accessible as device index `0` |
 | **RAM** | 8 GB minimum, 16 GB recommended |
 | **GPU** *(optional)* | NVIDIA CUDA GPU for faster training; not needed for inference |
@@ -131,7 +130,31 @@ Indian-Sign-Language-Recognition-System/
 
 ---
 
-## 🚀 Setup — Windows, macOS & Linux
+## 🚀 Quick Start (All Platforms)
+
+```bash
+# 1. Clone
+git clone https://github.com/<your-username>/Indian-Sign-Language-Recognition-System.git
+cd Indian-Sign-Language-Recognition-System
+
+# 2. Create & activate virtual environment
+python -m venv venv
+source venv/bin/activate        # macOS / Linux
+# venv\Scripts\activate          # Windows (cmd)
+# venv\Scripts\Activate.ps1      # Windows (PowerShell)
+
+# 3. Install Python dependencies
+pip install -r requirements.txt
+
+# 4. Run the app (uses pre-trained model)
+python script.py
+```
+
+That's it. If something is missing the script will tell you exactly what to install.
+
+---
+
+## 🛠️ Detailed Setup — Windows, macOS & Linux
 
 ### 1. Clone the repository
 
@@ -140,7 +163,7 @@ git clone https://github.com/<your-username>/Indian-Sign-Language-Recognition-Sy
 cd Indian-Sign-Language-Recognition-System
 ```
 
-### 2. Create a virtual environment (recommended)
+### 2. Create a virtual environment
 
 ```bash
 python -m venv venv
@@ -154,67 +177,50 @@ python -m venv venv
 | **Windows** (PowerShell) | `venv\Scripts\Activate.ps1` |
 | **macOS / Linux** | `source venv/bin/activate` |
 
-### 3. Install dependencies
+### 3. Install system dependencies (if needed)
 
 #### Windows
 
-```bash
-pip install -r requirements.txt
-```
+No extra system packages required — everything is handled by pip.
 
-> **Note:** Tkinter ships with the official Python installer on Windows. No extra steps.
+#### macOS
 
-#### macOS (Intel)
+No extra system packages required. For Apple Silicon GPU acceleration (optional):
 
 ```bash
-pip install -r requirements.txt
+pip install tensorflow-metal
 ```
 
-> **Note:** If you don't have Tkinter, install it via:
-> ```bash
-> brew install python-tk@3.10   # match your Python version
-> ```
-
-#### macOS (Apple Silicon — M1/M2/M3/M4)
-
-For GPU-accelerated TensorFlow on Apple Silicon:
-
-```bash
-pip install tensorflow-macos tensorflow-metal
-pip install -r requirements.txt
-```
-
-> The `tensorflow` line in `requirements.txt` will be satisfied by `tensorflow-macos`.
+> **Camera:** The first run will trigger a macOS camera permission dialog.  
+> If it doesn't appear, go to: **System Settings → Privacy & Security → Camera** and enable your terminal app.
 
 #### Linux (Ubuntu / Debian)
 
 ```bash
-# System dependencies
 sudo apt update
-sudo apt install python3-tk espeak libespeak-dev
-
-# Python packages
-pip install -r requirements.txt
+sudo apt install python3-tk espeak
 ```
 
 #### Linux (Fedora / RHEL)
 
 ```bash
-sudo dnf install python3-tkinter espeak espeak-devel
+sudo dnf install python3-tkinter espeak
+```
+
+> **Note:** `python3-tk` is required (GUI). `espeak` is optional (text-to-speech).  
+> If you skip these, `script.py` will detect the missing packages at startup and print the exact install command.
+
+### 4. Install Python dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 4. Verify installation
+### 5. Verify installation
 
 ```bash
 python -c "import cv2, mediapipe, tensorflow, pyttsx3; print('All dependencies OK')"
 ```
-
-### 5. Grant camera permissions (macOS only)
-
-On macOS, the first run will trigger a camera permission dialog.  
-If it doesn't appear, go to:  
-**System Settings → Privacy & Security → Camera** and enable your terminal app.
 
 ---
 
@@ -237,7 +243,7 @@ python collect_imgs.py
 
 ### Step 2 — Train the Model
 
-> **Skip this step** if using the included `Mobilenetv2_ISL_model.h5`.
+> **Skip this step** if using the included `Mobilenetv2_ISL_model.keras`.
 
 ```bash
 python train_model.py
@@ -246,9 +252,9 @@ python train_model.py
 Training details:
 - **Architecture:** MobileNetV2 with fine-tuned top 30% of layers
 - **Input size:** 224 × 224 RGB
-- **Augmentation:** Rotation, zoom, shift, shear
+- **Augmentation:** Keras preprocessing layers (rotation, zoom, translation) — baked into the model
 - **Callbacks:** Early stopping (patience=5), learning rate reduction
-- **Output:** Saves `Mobilenetv2_ISL_model.h5` (~25 MB)
+- **Output:** Saves `Mobilenetv2_ISL_model.keras` (~10 MB)
 
 > **For GPU training on Google Colab:** Upload `train_model.py` and a zipped `Indian/` folder, then run in a GPU runtime.
 

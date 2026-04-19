@@ -1,4 +1,74 @@
+"""
+script.py — Real-time Indian Sign Language recognition application.
+
+Captures webcam video, detects hands with MediaPipe, classifies ISL signs
+using a trained MobileNetV2 model, and speaks the recognised text aloud.
+
+Compatible with TensorFlow >=2.16 / Keras 3.
+
+Prerequisites:
+    pip install -r requirements.txt
+    python train_model.py          # produces Mobilenetv2_ISL_model.keras
+
+Usage:
+    python script.py
+"""
+
 import os
+import sys
+import platform
+
+# -------------------- Pre-flight checks --------------------
+# Catch missing system-level dependencies BEFORE any heavy imports
+# so users get a clear fix instead of a cryptic traceback.
+
+def _preflight():
+    """Check for system-level deps that pip cannot install."""
+    errors = []
+    warnings = []
+
+    # 1. tkinter (standard-lib but not always installed on Linux)
+    try:
+        import tkinter  # noqa: F401
+    except ImportError:
+        if platform.system() == "Linux":
+            errors.append(
+                "  • tkinter is missing.\n"
+                "    Fix:  sudo apt install python3-tk   (Debian/Ubuntu)\n"
+                "          sudo dnf install python3-tkinter  (Fedora)"
+            )
+        else:
+            errors.append("  • tkinter is missing — reinstall Python with Tk support.")
+
+    # 2. espeak (needed by pyttsx3 on Linux — warn only, app has fallbacks)
+    if platform.system() == "Linux":
+        import shutil
+        if shutil.which("espeak") is None:
+            warnings.append(
+                "  • espeak not found — text-to-speech may not work.\n"
+                "    Fix:  sudo apt install espeak        (Debian/Ubuntu)\n"
+                "          sudo dnf install espeak        (Fedora)"
+            )
+
+    if warnings:
+        print("\n⚠️  Optional system dependencies missing:")
+        for w in warnings:
+            print(w)
+        print()
+
+    if errors:
+        print("\n" + "=" * 60)
+        print("  ❌ Missing required system dependencies")
+        print("=" * 60)
+        for e in errors:
+            print(e)
+        print("=" * 60)
+        print("Install the above, then re-run:  python script.py\n")
+        sys.exit(1)
+
+_preflight()
+
+# -------------------- Imports --------------------
 # Suppress harmless TensorFlow and CUDA logs for Intel-only setup
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
@@ -11,8 +81,6 @@ import mediapipe as mp
 import numpy as np
 import tensorflow as tf
 import threading, queue
-import sys
-import platform
 
 # -------------------- Cross-platform helpers --------------------
 def get_ui_font():
@@ -26,7 +94,11 @@ def get_ui_font():
         return 'DejaVu Sans'
 
 # -------------------- Model config --------------------
-MODEL_PATH = "Mobilenetv2_ISL_model.keras"
+# Try .keras first (modern), then fall back to .h5 (legacy)
+MODEL_PATHS = [
+    "Mobilenetv2_ISL_model.keras",
+    "Mobilenetv2_ISL_model.h5",
+]
 INPUT_W = INPUT_H = 224  # your model input
 # Fill this with your actual label order:
 CLASS_NAMES = [
@@ -36,7 +108,28 @@ CLASS_NAMES = [
     'S','T','U','V','W','X','Y','Z'
 ]
 
-model = tf.keras.models.load_model(MODEL_PATH)
+# --- Load model with clear error message ---
+model = None
+for _path in MODEL_PATHS:
+    if os.path.isfile(_path):
+        try:
+            model = tf.keras.models.load_model(_path)
+            print(f"✅ Loaded model from '{_path}'")
+            break
+        except Exception as e:
+            print(f"⚠️  Failed to load '{_path}': {e}")
+
+if model is None:
+    print("\n" + "=" * 60)
+    print("  ❌ ERROR: No trained model found!")
+    print("=" * 60)
+    print("  Looked for:")
+    for p in MODEL_PATHS:
+        print(f"    • {p}")
+    print("\n  Please train the model first:")
+    print("    python train_model.py")
+    print("=" * 60)
+    sys.exit(1)
 
 # -------------------- MediaPipe Hands (hands only) --------------------
 mp_hands = mp.solutions.hands
@@ -50,6 +143,10 @@ hands = mp_hands.Hands(
 
 # -------------------- Video capture --------------------
 cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    print("\n❌ ERROR: Could not open webcam (index 0).")
+    print("   Make sure a camera is connected and not in use by another app.")
+    sys.exit(1)
 
 # -------------------- Speech (pyttsx3) in a background worker --------------------
 # Using a single engine in a dedicated thread avoids run-loop conflicts.
@@ -100,7 +197,7 @@ class TTSManager:
                 
                 # Try platform-specific fallback if pyttsx3 fails
                 try:
-                    import os, subprocess
+                    import subprocess
                     system = platform.system()
                     if system == 'Windows':
                         # PowerShell speech synthesis

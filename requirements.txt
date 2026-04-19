@@ -1,46 +1,42 @@
-# Core dependencies for Indian Sign Language Recognition System
-# Works on Windows, macOS (Intel & Apple Silicon), and Linux
+# Indian Sign Language Recognition System — Requirements
+# Tested on Python 3.10 / 3.11 / 3.12 (Windows, macOS, Linux)
 
-# Deep Learning Framework
-# NOTE for macOS Apple Silicon (M1/M2/M3): use 'tensorflow-macos' instead
-tensorflow>=2.8.0
-keras>=2.8.0
+# Deep Learning
+tensorflow>=2.16.0
+# NOTE: Keras 3 ships inside tensorflow>=2.16. Do NOT install 'keras'
+#       as a separate package unless you need multi-backend support.
 
 # Computer Vision
-opencv-python>=4.5.0
-mediapipe>=0.8.0
-pillow>=8.0.0
+opencv-python>=4.8.0
+mediapipe>=0.10.9
+pillow>=10.0.0
 
 # Data Processing
-numpy>=1.21.0
-pandas>=1.3.0
-scikit-learn>=1.0.0
+numpy>=1.26.0
+pandas>=2.1.0
+scikit-learn>=1.3.0
 
 # GUI and Visualization
-matplotlib>=3.5.0
-seaborn>=0.11.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
 
 # Speech Synthesis
 pyttsx3>=2.90
 
-# Jupyter Notebook Support (for training)
-jupyter>=1.0.0
-ipykernel>=6.0.0
-
-# Additional Utilities
-tqdm>=4.62.0
-requests>=2.25.0
+# Progress Bars
+tqdm>=4.66.0
 
 # -------------------------------------------------------------------
-# Platform-specific notes (no action needed, pip handles these):
+# Platform-specific notes:
 #
-#   Windows : pyttsx3 uses SAPI5 natively. No extra system packages.
-#   macOS   : pyttsx3 uses NSSpeechSynthesizer. For Apple Silicon, install
-#             tensorflow-macos and tensorflow-metal for GPU acceleration.
+#   Windows : Everything works out of the box.
+#   macOS   : pyttsx3 uses NSSpeechSynthesizer.
+#             For Apple Silicon (M1/M2/M3/M4) GPU acceleration:
+#               pip install tensorflow-metal
 #   Linux   : pyttsx3 requires 'espeak' — install via:
-#               sudo apt install espeak        (Debian/Ubuntu)
+#               sudo apt install espeak        (Debian / Ubuntu)
 #               sudo dnf install espeak        (Fedora)
 #
-# GPU Support (NVIDIA only, optional):
+# GPU Support (NVIDIA, optional):
 #   pip install tensorflow[and-cuda]
 # -------------------------------------------------------------------
